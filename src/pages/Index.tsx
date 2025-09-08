@@ -2545,10 +2545,10 @@ const Index = () => {
         // Add adventure story
         setChatMessages(prev => {
           
-          // Create the adventure story message with coin reward notification
+          // Create the adventure story message
           const adventureStoryMessage: ChatMessage = {
             type: 'ai',
-            content: `🎉 Great job! You earned 10 coins! 🪙\n\n${latestAIResponse.content_after_spelling}`,
+            content: latestAIResponse.content_after_spelling,
             timestamp: Date.now() + 1 // Ensure it comes after success message
           };
           
@@ -3570,11 +3570,20 @@ const Index = () => {
                       
                       {/* Input Bar */}
                       <div className="flex-shrink-0 p-3 border-t border-primary/30 bg-gradient-to-r from-primary/5 to-transparent">
-                        {/* NEW: Unified AI System Status Indicator */}
+                        {/* Ideas Button */}
                         {isUnifiedSystemReady && (
-                          <div className="mb-2 flex items-center gap-2 text-xs text-green-600 bg-green-50 rounded-full px-3 py-1 animate-pulse">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span>🤖 Smart AI with Auto-Images Active</span>
+                          <div className="mb-2 flex justify-center">
+                            <Button
+                              onClick={() => {
+                                playClickSound();
+                                onGenerate('Ideas, please?');
+                              }}
+                              variant="outline"
+                              size="sm"
+                              className="text-xs bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200 hover:from-purple-100 hover:to-pink-100 hover:border-purple-300 text-purple-700 hover:text-purple-800 rounded-full px-4 py-1 transition-all duration-200 shadow-sm hover:shadow-md"
+                            >
+                              💡 Ideas, please?
+                            </Button>
                           </div>
                         )}
                         

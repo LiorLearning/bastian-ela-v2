@@ -23,7 +23,7 @@ export function PetPage({}: Props): JSX.Element {
   const { careLevel, ownedPets, audioEnabled, setCareLevel, addOwnedPet, setAudioEnabled, isPetOwned, getCoinsSpentForCurrentStage, getPetCoinsSpent, addPetCoinsSpent } = usePetData();
   
   // State for which pet is currently being displayed
-  const [currentPet, setCurrentPet] = useState('chihuahua'); // Default to chihuahua (Robber)
+  const [currentPet, setCurrentPet] = useState('link'); // Default to link
   
   // Local state for UI interactions
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
@@ -265,7 +265,21 @@ export function PetPage({}: Props): JSX.Element {
     }
   };
 
-  // Get Chihuahua (Robber) images based on coins spent
+  // Get Link images based on coins spent
+  const getLinkImage = (coinsSpent: number) => {
+    if (coinsSpent >= 50) {
+      return "https://tutor.mathkraft.org/_next/image?url=%2Fapi%2Fproxy%3Furl%3Dhttps%253A%252F%252Fdubeus2fv4wzz.cloudfront.net%252Fimages%252F20250908_222731_image.png&w=3840&q=75&dpl=dpl_2uGXzhZZsLneniBZtsxr7PEabQXN";
+    } else if (coinsSpent >= 30) {
+      return "https://tutor.mathkraft.org/_next/image?url=%2Fapi%2Fproxy%3Furl%3Dhttps%253A%252F%252Fdubeus2fv4wzz.cloudfront.net%252Fimages%252F20250908_221432_image.png&w=3840&q=75&dpl=dpl_2uGXzhZZsLneniBZtsxr7PEabQXN";
+    } else if (coinsSpent >= 10) {
+      return "https://tutor.mathkraft.org/_next/image?url=%2Fapi%2Fproxy%3Furl%3Dhttps%253A%252F%252Fdubeus2fv4wzz.cloudfront.net%252Fimages%252F20250908_221400_image.png&w=3840&q=75&dpl=dpl_2uGXzhZZsLneniBZtsxr7PEabQXN";
+    } else {
+      return "https://tutor.mathkraft.org/_next/image?url=%2Fapi%2Fproxy%3Furl%3Dhttps%253A%252F%252Fdubeus2fv4wzz.cloudfront.net%252Fimages%252F20250908_221353_image.png&w=3840&q=75&dpl=dpl_2uGXzhZZsLneniBZtsxr7PEabQXN";
+    }
+  };
+
+  // COMMENTED OUT - Old Chihuahua (Robber) images
+  /*
   const getChihuahuaImage = (coinsSpent: number) => {
     if (coinsSpent >= 50) {
       return "https://tutor.mathkraft.org/_next/image?url=%2Fapi%2Fproxy%3Furl%3Dhttps%253A%252F%252Fdubeus2fv4wzz.cloudfront.net%252Fimages%252F20250903_183026_image.png&w=3840&q=75&dpl=dpl_2uGXzhZZsLneniBZtsxr7PEabQXN";
@@ -277,8 +291,10 @@ export function PetPage({}: Props): JSX.Element {
       return "https://tutor.mathkraft.org/_next/image?url=%2Fapi%2Fproxy%3Furl%3Dhttps%253A%252F%252Fdubeus2fv4wzz.cloudfront.net%252Fimages%252F20250903_180656_image.png&w=3840&q=75&dpl=dpl_2uGXzhZZsLneniBZtsxr7PEabQXN";
     }
   };
+  */
 
-  // Get Frog images based on coins spent
+  // COMMENTED OUT - Old Frog images
+  /*
   const getFrogImage = (coinsSpent: number) => {
     if (coinsSpent >= 50) {
       return "https://tutor.mathkraft.org/_next/image?url=%2Fapi%2Fproxy%3Furl%3Dhttps%253A%252F%252Fdubeus2fv4wzz.cloudfront.net%252Fimages%252F20250908_170305_image.png&w=3840&q=75&dpl=dpl_2uGXzhZZsLneniBZtsxr7PEabQXN";
@@ -290,8 +306,18 @@ export function PetPage({}: Props): JSX.Element {
       return "https://tutor.mathkraft.org/_next/image?url=%2Fapi%2Fproxy%3Furl%3Dhttps%253A%252F%252Fdubeus2fv4wzz.cloudfront.net%252Fimages%252F20250908_170229_image.png&w=3840&q=75&dpl=dpl_2uGXzhZZsLneniBZtsxr7PEabQXN";
     }
   };
+  */
 
   const getPetImage = () => {
+    // Check if Link is being displayed - this is the default unlocked teammate
+    if (currentPet === 'link') {
+      // For Link, use pet-specific coin tracking
+      const linkCoinsSpent = getPetCoinsSpent('link');
+      return getLinkImage(linkCoinsSpent);
+    }
+    
+    // COMMENTED OUT - Old pet logic
+    /*
     // Check if Chihuahua (Robber) is being displayed - this is the default unlocked pet
     if (currentPet === 'chihuahua') {
       // For Chihuahua, use pet-specific coin tracking
@@ -305,9 +331,10 @@ export function PetPage({}: Props): JSX.Element {
       const frogCoinsSpent = getPetCoinsSpent('frog');
       return getFrogImage(frogCoinsSpent);
     }
+    */
     
-    // Default fallback to chihuahua image if no other pet is selected
-    return getChihuahuaImage(getPetCoinsSpent('chihuahua'));
+    // Default fallback to link image if no other teammate is selected
+    return getLinkImage(getPetCoinsSpent('link'));
   };
 
   const handlePetPurchase = (petType: string, cost: number) => {
@@ -331,18 +358,37 @@ export function PetPage({}: Props): JSX.Element {
     // Play purchase sound (reuse evolution sound for now)
     playEvolutionSound();
     
-    // Special message for new pets about arrival time
+    // Special message for new teammates about arrival time
+    if (petType === 'donkey-kong') {
+      alert(`🎉 Congratulations! You recruited Donkey Kong! 🚚 Your new teammate will arrive at your base within 24 hours!`);
+    } else if (petType === 'mario') {
+      alert(`🎉 Congratulations! You recruited Mario! 🚚 Your new teammate will arrive at your base within 24 hours!`);
+    } else {
+      alert(`🎉 Congratulations! You recruited ${petType}!`);
+    }
+
+    // COMMENTED OUT - Old pet purchase messages
+    /*
     if (petType === 'frog') {
       alert(`🎉 Congratulations! You bought a Frog! 🚚 Your new pet will arrive in your pet park within 24 hours!`);
     } else {
       alert(`🎉 Congratulations! You bought a ${petType}!`);
     }
+    */
   };
 
+  const availablePets = [
+    { id: 'donkey-kong', emoji: '🦍', name: 'Donkey Kong', cost: 60 },
+    { id: 'mario', emoji: '👨‍🔧', name: 'Mario', cost: 80, locked: true } // Coming soon - locked for now
+  ];
+
+  // COMMENTED OUT - Old available pets
+  /*
   const availablePets = [
     { id: 'frog', emoji: '🐸', name: 'Frog', cost: 60 },
     { id: 'hen', emoji: '🐔', name: 'Hen', cost: 80, locked: true } // Coming soon - locked for now
   ];
+  */
 
   // ElevenLabs Text-to-Speech function using the proper TTS service
   const speakText = async (text: string) => {
@@ -373,6 +419,8 @@ export function PetPage({}: Props): JSX.Element {
       return thoughts[Math.floor(Math.random() * thoughts.length)];
     };
     
+    // COMMENTED OUT - Old frog pet thoughts
+    /*
     // Different thoughts for different pets
     if (currentPet === 'frog' && isPetOwned('frog')) {
       const frogCoinsSpent = getPetCoinsSpent('frog');
@@ -380,11 +428,11 @@ export function PetPage({}: Props): JSX.Element {
       if (frogCoinsSpent === 0) {
         const hungryThoughts = [
           "Ribbit ribbit! 🐸 I'm your new Frog! My lily pad belly is empty... can you feed me some flies?",
-          "Hey there, Irene! 🌿 Frog here! I'm hopping from hunger... got any treats?",
+          "Hey there, Bastian! 🌿 Frog here! I'm hopping from hunger... got any treats?",
           "Ribbit! It's me, your amphibian friend! 🐸 My tummy is croaking for some food!",
-          "Hi Irene! Your Frog needs some yummy flies! 🪰 My pond appetite is huge!",
+          "Hi Bastian! Your Frog needs some yummy flies! 🪰 My pond appetite is huge!",
           "Ribbit ribbit! 🐸 I'm starving! Can you help your frog friend with some treats?",
-          "Irene! 🌿 Your Frog is so hungry... flies would make me leap with joy!"
+          "Bastian! 🌿 Your Frog is so hungry... flies would make me leap with joy!"
         ];
         return getRandomThought(hungryThoughts);
       } else if (frogCoinsSpent < 30) {
@@ -393,7 +441,7 @@ export function PetPage({}: Props): JSX.Element {
           "Ribbit ribbit! Those flies were amazing! 🐸 But I could eat more!",
           "Yum yum! 🪰 These treats are perfect for a growing frog like me!",
           "Ribbit! Those flies hit the spot! 🐸 But my pond appetite is still growing!",
-          "Thank you, Irene! 🥰 Those flies were perfect, but I'm still a little peckish!",
+          "Thank you, Bastian! 🥰 Those flies were perfect, but I'm still a little peckish!",
           "Delicious! 🌿 I'm hopping so fast! More flies would make me leap with happiness!"
         ];
         return getRandomThought(satisfiedThoughts);
@@ -402,36 +450,85 @@ export function PetPage({}: Props): JSX.Element {
           "Ribbit ribbit! I'm growing stronger! 🐸 Keep feeding me - I'm getting bigger and more athletic!",
           "Look at me leap! 💪 I can feel myself getting stronger with each fly!",
           "Amazing! I'm growing so fast! 🌿 More flies will help me become the ultimate frog!",
-          "Irene, I feel so energetic! ⚡ These flies are making me bigger and more agile!",
+          "Bastian, I feel so energetic! ⚡ These flies are making me bigger and more agile!",
           "Ribbit ribbit! I'm transforming! 🦋 Keep the flies coming - I'm almost ready for the next stage!",
           "Incredible! My legs are growing! 🐸 More flies will help me reach my full potential!"
         ];
         return getRandomThought(growingThoughts);
       } else {
         const happyThoughts = [
-          "Ribbit ribbit! 🥳 I feel amazing, Irene! Now... could you get me some frog friends to play with!",
+          "Ribbit ribbit! 🥳 I feel amazing, Bastian! Now... could you get me some frog friends to play with!",
           "Ribbit ribbit! I'm so strong now! 💪 Maybe it's time to find some playmates to hop with?",
           "I feel fantastic! 🌟 All those flies worked! Now I'm ready for some pond adventures with friends!",
-          "Amazing! I'm at my best! ✨ Irene, can you help me find some buddies to leap around with?",
+          "Amazing! I'm at my best! ✨ Bastian, can you help me find some buddies to leap around with?",
           "Hooray! I'm fully grown! 🎉 Can you help me find some frog friends to play with?",
           "Perfect! I feel incredible! 🚀 Maybe it's time to find some playmates for swamp adventures?"
         ];
         return getRandomThought(happyThoughts);
       }
     }
+    */
 
-    // Chihuahua (Robber) is the default unlocked pet - always available
+    // Link is the default unlocked teammate - always available
+    if (currentPet === 'link') {
+      const linkCoinsSpent = getPetCoinsSpent('link');
+      
+      if (linkCoinsSpent === 0) {
+        const hungryThoughts = [
+          "Hey there, Bastian... 🗡️ I'm Link, and my belly feels so empty... could you spare some treats?",
+          "Hi Bastian... ⚔️ It's me, Link, your teammate... I'm feeling so hungry... do you have any snacks?",
+          "Hyah... It's me, your loyal companion Link... 🛡️ My tummy is growling for food, and it's making me sad.",
+          "Hi Bastian... Link needs some treats... 🍖 My Hylian appetite is huge, and it's making me feel down.",
+          "Hey Bastian... 🗡️ I'm starving... Can you help your teammate with some treats? I'm feeling so low.",
+          "Bastian... ⚔️ I'm so hungry... treats would bring a little happiness to my day."
+        ];
+        return getRandomThought(hungryThoughts);
+      } else if (linkCoinsSpent < 30) {
+        const satisfiedThoughts = [
+          "Awesome! 🗡️ More treats will make this hero dance with joy!",
+          "Hyah hyah! Those treats were amazing! ⚔️ But Link could eat more!",
+          "Yum yum! 🍖 These treats are perfect for a growing hero like me!",
+          "Nice! Those treats hit the spot! 🛡️ But my heroic appetite is still growing!",
+          "Thank you, Bastian! 🥰 Those treats were perfect, but I'm still a little peckish!",
+          "Delicious! 🗡️ I'm so energetic! More treats would make me bounce with happiness!"
+        ];
+        return getRandomThought(satisfiedThoughts);
+      } else if (linkCoinsSpent < 50) {
+        const growingThoughts = [
+          "Awesome! I'm growing stronger! ⚔️ Keep feeding me - I'm getting bigger and braver!",
+          "Look at me go! 💪 I can feel myself getting stronger with each treat!",
+          "Amazing! I'm growing so fast! 🗡️ More treats will help me become the ultimate hero!",
+          "Bastian, I feel so energetic! ⚡ These treats are making me bigger and more confident!",
+          "Wow! I'm transforming! 🦋 Keep the treats coming - I'm almost ready for the next stage!",
+          "Incredible! My strength is growing! 🛡️ More treats will help me reach my full potential!"
+        ];
+        return getRandomThought(growingThoughts);
+      } else {
+        const happyThoughts = [
+          "Amazing! 🥳 I feel incredible, Bastian! Now... could you get me some teammates to adventure with!",
+          "Hyah hyah! I'm so strong now! 💪 Maybe it's time to find some companions to quest with?",
+          "I feel fantastic! 🗡️ All those treats worked! Now I'm ready for some adventures with friends!",
+          "Awesome! I'm at my best! ✨ Bastian, can you help me find some buddies to explore with?",
+          "Hooray! I'm fully grown! 🎉 Can you help me find some teammates to adventure with?",
+          "Perfect! I feel incredible! 🚀 Maybe it's time to find some companions for epic quests?"
+        ];
+        return getRandomThought(happyThoughts);
+      }
+    }
+
+    // COMMENTED OUT - Old Chihuahua (Robber) thoughts
+    /*
     if (currentPet === 'chihuahua') {
       const chihuahuaCoinsSpent = getPetCoinsSpent('chihuahua');
       
       if (chihuahuaCoinsSpent === 0) {
         const hungryThoughts = [
           "Yip yip! 🐕 I'm Robber the Chihuahua! My tiny belly is empty... can you feed me some treats?",
-          "Hey there, Irene! 🌟 Robber here! I'm shaking from hunger... got any snacks?",
+          "Hey there, Bastian! 🌟 Robber here! I'm shaking from hunger... got any snacks?",
           "Woof! It's me, your fierce little Robber! 🐕 My tummy is growling for some food!",
-          "Hi Irene! Robber needs some yummy treats! 🍖 My small but mighty appetite is huge!",
+          "Hi Bastian! Robber needs some yummy treats! 🍖 My small but mighty appetite is huge!",
           "Yip yip! 🐕 I'm starving! Can you help your tiny warrior with some treats?",
-          "Irene! 🌟 Your Chihuahua Robber is so hungry... treats would make me wag my tail!"
+          "Bastian! 🌟 Your Chihuahua Robber is so hungry... treats would make me wag my tail!"
         ];
         return getRandomThought(hungryThoughts);
       } else if (chihuahuaCoinsSpent < 30) {
@@ -440,7 +537,7 @@ export function PetPage({}: Props): JSX.Element {
           "Woof woof! Those treats were amazing! 🐕 But Robber could eat more!",
           "Yum yum! 🍖 These treats are perfect for a growing Chihuahua like me!",
           "Yip! Those treats hit the spot! 🐕 But my fierce appetite is still growing!",
-          "Thank you, Irene! 🥰 Those treats were perfect, but I'm still a little peckish!",
+          "Thank you, Bastian! 🥰 Those treats were perfect, but I'm still a little peckish!",
           "Delicious! 🌟 My tail is wagging so fast! More treats would make me bounce with happiness!"
         ];
         return getRandomThought(satisfiedThoughts);
@@ -449,26 +546,27 @@ export function PetPage({}: Props): JSX.Element {
           "Yip yip! I'm growing stronger! 🐕 Keep feeding me - I'm getting bigger and braver!",
           "Look at me strut! 💪 I can feel myself getting stronger with each treat!",
           "Amazing! I'm growing so fast! 🌟 More treats will help me become the ultimate Chihuahua!",
-          "Irene, I feel so energetic! ⚡ These treats are making me bigger and more confident!",
+          "Bastian, I feel so energetic! ⚡ These treats are making me bigger and more confident!",
           "Yip yip! I'm transforming! 🦋 Keep the treats coming - I'm almost ready for the next stage!",
           "Incredible! My courage is growing! 🐕 More treats will help me reach my full potential!"
         ];
         return getRandomThought(growingThoughts);
       } else {
         const happyThoughts = [
-          "Yip yip! 🥳 I feel amazing, Irene! Now... could you get me some Chihuahua friends to play with!",
+          "Yip yip! 🥳 I feel amazing, Bastian! Now... could you get me some Chihuahua friends to play with!",
           "Woof woof! I'm so strong now! 💪 Maybe it's time to find some playmates to run with?",
           "I feel fantastic! 🌟 All those treats worked! Now I'm ready for some adventures with friends!",
-          "Amazing! I'm at my best! ✨ Irene, can you help me find some buddies to explore with?",
+          "Amazing! I'm at my best! ✨ Bastian, can you help me find some buddies to explore with?",
           "Hooray! I'm fully grown! 🎉 Can you help me find some Chihuahua friends to play with?",
           "Perfect! I feel incredible! 🚀 Maybe it's time to find some playmates for park adventures?"
         ];
         return getRandomThought(happyThoughts);
       }
     }
+    */
     
-    // Default fallback - should not reach here as chihuahua is always available
-    return "Yip yip! 🐕 I'm Robber! Something seems wrong... can you help me, Irene?";
+    // Default fallback - should not reach here as link is always available
+    return "Hey there, Bastian! 🗡️ I'm Link! Something seems wrong... can you help me?";
   };
 
   // Get coins spent for current pet
@@ -681,9 +779,74 @@ export function PetPage({}: Props): JSX.Element {
         </div>
       </div>
 
-      {/* Chihuahua Evolution Display - Right Side */}
+      {/* Link Evolution Display - Right Side */}
       <div className="absolute right-6 top-1/2 transform -translate-y-1/2 z-10 flex flex-col gap-4">
-        {/* Small Pup - Always available */}
+        {/* Young Link - Always available */}
+        <div className="flex flex-col items-center">
+          <div className="relative p-3 rounded-2xl border-2 transition-all duration-300 bg-gradient-to-br from-blue-100 to-cyan-100 border-blue-400 shadow-lg">
+            <div className="text-5xl transition-all duration-300 grayscale-0">
+              🗡️
+            </div>
+            <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+              ✓
+            </div>
+          </div>
+          <div className="text-xs font-semibold text-center mt-2 text-white drop-shadow-md">
+            1 Day 🔥
+          </div>
+        </div>
+
+        {/* Hero Link - Unlocks at 2 consecutive days */}
+        <div className="flex flex-col items-center">
+          <div className={`relative p-4 rounded-2xl border-2 transition-all duration-300 ${
+            currentStreak >= 2 
+              ? 'bg-gradient-to-br from-yellow-100 to-orange-100 border-yellow-400 shadow-lg' 
+              : 'bg-gray-100 border-gray-300 opacity-60'
+          }`}>
+            <div className={`text-6xl transition-all duration-300 ${
+              currentStreak >= 2 ? 'grayscale-0' : 'grayscale'
+            }`}>
+              ⚔️
+            </div>
+            {currentStreak >= 2 && (
+              <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                ✓
+              </div>
+            )}
+          </div>
+          <div className="text-xs font-semibold text-center mt-2 text-white drop-shadow-md">
+            {currentStreak >= 2 ? 'Hero Link' : '2 Days 🔥'}
+          </div>
+        </div>
+
+        {/* Master Link - Unlocks at 3 consecutive days */}
+        <div className="flex flex-col items-center">
+          <div className={`relative p-4 rounded-2xl border-2 transition-all duration-300 ${
+            currentStreak >= 3 
+              ? 'bg-gradient-to-br from-purple-100 to-pink-100 border-purple-400 shadow-lg' 
+              : 'bg-gray-100 border-gray-300 opacity-60'
+          }`}>
+            <div className={`text-7xl transition-all duration-300 ${
+              currentStreak >= 3 ? 'grayscale-0' : 'grayscale'
+            }`}>
+              🛡️
+            </div>
+            {currentStreak >= 3 && (
+              <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                ✓
+              </div>
+            )}
+          </div>
+          <div className="text-xs font-semibold text-center mt-2 text-white drop-shadow-md">
+            {currentStreak >= 3 ? 'Master Link' : '3 Days 🔥'}
+          </div>
+        </div>
+
+      </div>
+
+      {/* COMMENTED OUT - Old Chihuahua Evolution Display */}
+      {/*
+      <div className="absolute right-6 top-1/2 transform -translate-y-1/2 z-10 flex flex-col gap-4">
         <div className="flex flex-col items-center">
           <div className="relative p-3 rounded-2xl border-2 transition-all duration-300 bg-gradient-to-br from-blue-100 to-cyan-100 border-blue-400 shadow-lg">
             <div className="text-5xl transition-all duration-300 grayscale-0">
@@ -698,7 +861,6 @@ export function PetPage({}: Props): JSX.Element {
           </div>
         </div>
 
-        {/* Medium Chihuahua - Unlocks at 2 consecutive days */}
         <div className="flex flex-col items-center">
           <div className={`relative p-4 rounded-2xl border-2 transition-all duration-300 ${
             currentStreak >= 2 
@@ -721,7 +883,6 @@ export function PetPage({}: Props): JSX.Element {
           </div>
         </div>
 
-        {/* Large Chihuahua - Unlocks at 3 consecutive days */}
         <div className="flex flex-col items-center">
           <div className={`relative p-4 rounded-2xl border-2 transition-all duration-300 ${
             currentStreak >= 3 
@@ -743,8 +904,8 @@ export function PetPage({}: Props): JSX.Element {
             {currentStreak >= 3 ? 'Large Chihuahua' : '3 Days 🔥'}
           </div>
         </div>
-
       </div>
+      */}
 
       {/* Bottom Action Buttons */}
       <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-30">
@@ -800,12 +961,34 @@ export function PetPage({}: Props): JSX.Element {
         {audioEnabled ? '🔊' : '🔇'}
       </button>
 
-      {/* Pet Switcher - Only show if user owns multiple pets */}
+      {/* Teammate Switcher - Only show if user owns multiple teammates */}
       {ownedPets.length > 1 && (
         <div className="fixed top-24 left-6 z-20 flex flex-col gap-2">
           <div className="text-xs font-semibold text-white drop-shadow-md mb-1">
-            Your Pets:
+            Your Team:
           </div>
+          {ownedPets.map((petId) => {
+            const petEmoji = petId === 'link' ? '🗡️' : petId === 'donkey-kong' ? '🦍' : petId === 'mario' ? '👨‍🔧' : '🤺';
+            const isActive = currentPet === petId;
+            
+            return (
+              <button
+                key={petId}
+                onClick={() => setCurrentPet(petId)}
+                className={`w-12 h-12 rounded-xl border-2 text-2xl flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110 ${
+                  isActive 
+                    ? 'bg-gradient-to-br from-blue-500 to-purple-600 border-white text-white' 
+                    : 'bg-white/20 backdrop-blur-md border-white/30 text-white hover:bg-white/30'
+                }`}
+                title={`Switch to ${petId === 'link' ? 'Link' : petId === 'donkey-kong' ? 'Donkey Kong' : petId === 'mario' ? 'Mario' : petId}`}
+              >
+                {petEmoji}
+              </button>
+            );
+          })}
+
+          {/* COMMENTED OUT - Old pet switcher logic */}
+          {/*
           {ownedPets.map((petId) => {
             const petEmoji = petId === 'chihuahua' ? '🐕' : petId === 'frog' ? '🐸' : '🐾';
             const isActive = currentPet === petId;
@@ -825,6 +1008,7 @@ export function PetPage({}: Props): JSX.Element {
               </button>
             );
           })}
+          */}
         </div>
       )}
 
@@ -843,13 +1027,13 @@ export function PetPage({}: Props): JSX.Element {
             {/* Header */}
             <div className="text-center mb-6">
               <h2 className="text-3xl font-bold text-gray-800 mb-2">
-                🏪 Pet Shop
+                🏪 Teammate Shop
               </h2>
               <p className="text-sm text-gray-600 font-medium">
-                Adopt new animal friends!
+                Recruit new teammates!
               </p>
               <p className="text-xs text-blue-600 font-medium mt-2">
-                ✨ All pets evolve as you feed them cookies! ✨
+                ✨ All teammates evolve as you feed them cookies! ✨
               </p>
             </div>
 
