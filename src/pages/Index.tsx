@@ -22,6 +22,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useUnifiedAIStreaming, useUnifiedAIStatus } from "@/hooks/use-unified-ai-streaming";
 import { adventureSessionService } from "@/lib/adventure-session-service";
 import { chatSummaryService } from "@/lib/chat-summary-service";
+import { useCoins } from "@/pages/coinSystem";
 import rocket1 from "@/assets/comic-rocket-1.jpg";
 import spaceport2 from "@/assets/comic-spaceport-2.jpg";
 import alien3 from "@/assets/comic-alienland-3.jpg";
@@ -31,6 +32,7 @@ import MCQScreenTypeA from "./MCQScreenTypeA";
 import TopicSelection from "./TopicSelection";
   import UserOnboarding from "./UserOnboarding";
   import HomePage from "./HomePage";
+  import { PetPage } from "./PetPage";
   import { 
     cacheAdventureImage, 
     loadCachedAdventureImages, 
@@ -45,9 +47,25 @@ import { testFirebaseStorage } from "@/lib/firebase-test";
 import { debugFirebaseAdventures, debugSaveTestAdventure, debugFirebaseConnection } from "@/lib/firebase-debug-adventures";
 import { autoMigrateOnLogin, forceMigrateUserData } from "@/lib/firebase-data-migration";
 
-import { getRandomSpellingQuestion, SpellingQuestion } from "@/lib/questionBankUtils";
+import { 
+  getRandomSpellingQuestion, 
+  getRandomCVCSpellingQuestion, 
+  getRandomCVCSpellingQuestionByDifficulty,
+  getCVCSpellingQuestionsFromBank,
+  SpellingQuestion 
+} from "@/lib/questionBankUtils";
+import { 
+  getSpellingConfig, 
+  updateSpellingConfig, 
+  getProgressiveDifficulty,
+  type SpellingConfig,
+  type SpellingMode,
+  type CVCDifficulty 
+} from "@/config/spelling-config";
 import FeedbackModal from "@/components/FeedbackModal";
 import { aiPromptSanitizer, SanitizedPromptResult } from "@/lib/ai-prompt-sanitizer";
+
+import SpellingSettings from "@/components/SpellingSettings";
 
 
 // Legacy user data interface for backwards compatibility
@@ -174,6 +192,9 @@ const Index = () => {
   // NEW: Unified AI streaming system status
   const { isUnifiedSystemReady, hasImageGeneration } = useUnifiedAIStatus();
 
+  // Coin system integration
+  const { coins, addCoins } = useCoins();
+
   // Auto-migrate localStorage data to Firebase when user authenticates
   React.useEffect(() => {
     if (user?.uid) {
@@ -259,12 +280,55 @@ const Index = () => {
   // Track message cycle for 3-3 pattern (3 pure adventure, then 3 with spelling)
   const [messageCycleCount, setMessageCycleCount] = React.useState(0);
   
+  // Spelling configuration and tracking
+  const [spellingConfig, setSpellingConfig] = React.useState<SpellingConfig>(() => getSpellingConfig());
+  const [spellingStats, setSpellingStats] = React.useState({ correct: 0, total: 0 });
+  const [showSpellingSettings, setShowSpellingSettings] = React.useState(false);
+  
   // Initialize message cycle count based on existing messages
   React.useEffect(() => {
     // Count AI messages to determine current cycle position
     const aiMessageCount = chatMessages.filter(msg => msg.type === 'ai').length;
     setMessageCycleCount(aiMessageCount % 6);
   }, []); // Only run on mount
+  
+  // Function to get spelling question based on current configuration
+  const getConfiguredSpellingQuestion = React.useCallback((): SpellingQuestion | null => {
+    const config = spellingConfig;
+    
+    switch (config.mode) {
+      case 'cvc-only':
+        if (config.cvcDifficulty === 'progressive') {
+          const difficulty = getProgressiveDifficulty(spellingStats.correct, spellingStats.total);
+          console.log(`📈 Progressive difficulty: ${difficulty} (${spellingStats.correct}/${spellingStats.total})`);
+          return getRandomCVCSpellingQuestionByDifficulty(difficulty);
+        } else if (config.cvcDifficulty !== 'progressive') {
+          return getRandomCVCSpellingQuestionByDifficulty(config.cvcDifficulty);
+        } else {
+          return getRandomCVCSpellingQuestion();
+        }
+        
+      case 'cvc-mixed':
+        // 70% CVC words, 30% other words
+        const useCVC = Math.random() < 0.7;
+        if (useCVC) {
+          if (config.cvcDifficulty === 'progressive') {
+            const difficulty = getProgressiveDifficulty(spellingStats.correct, spellingStats.total);
+            return getRandomCVCSpellingQuestionByDifficulty(difficulty);
+          } else if (config.cvcDifficulty !== 'progressive') {
+            return getRandomCVCSpellingQuestionByDifficulty(config.cvcDifficulty);
+          } else {
+            return getRandomCVCSpellingQuestion();
+          }
+        } else {
+          return getRandomSpellingQuestion();
+        }
+        
+      case 'all':
+      default:
+        return getRandomSpellingQuestion();
+    }
+  }, [spellingConfig, spellingStats]);
   
   // Show onboarding if user is authenticated but hasn't completed setup
   const showOnboarding = user && userData && (userData.isFirstTime || !userData.grade);
@@ -274,7 +338,7 @@ const Index = () => {
   
   // Dev tools state
   const [devToolsVisible, setDevToolsVisible] = React.useState(false);
-    const [currentScreen, setCurrentScreen] = React.useState<-1 | 0 | 1 | 2 | 3>(() => {
+    const [currentScreen, setCurrentScreen] = React.useState<-1 | 0 | 1 | 2 | 3 | 4>(() => {
     // If user exists but no userData yet, start at loading state (don't show topic selection)
     if (user && !userData) return -1;
     // If userData exists and user is already setup, go to home
@@ -1378,7 +1442,7 @@ const Index = () => {
         
         try {
           // Get current spelling question for context
-          const currentSpellingQuestion = getRandomSpellingQuestion();
+          const currentSpellingQuestion = getConfiguredSpellingQuestion();
           
           // Send message through unified system for image generation
           const unifiedResponse = await unifiedAIStreaming.sendMessage(
@@ -1713,7 +1777,7 @@ const Index = () => {
         
         // Implement 3-3 pattern: 3 pure adventure messages, then 3 with spelling questions
         const isSpellingPhase = messageCycleCount >= 3; // Messages 3, 4, 5 have spelling
-        const spellingQuestion = isSpellingPhase ? getRandomSpellingQuestion() : null;
+        const spellingQuestion = isSpellingPhase ? getConfiguredSpellingQuestion() : null;
         
         console.log(`🔄 Message cycle: ${messageCycleCount}/6, Phase: ${isSpellingPhase ? '📝 SPELLING' : '🏰 ADVENTURE'} (${messageCycleCount < 3 ? 'Pure Adventure' : 'Spelling Questions'})`);
         
@@ -1898,6 +1962,17 @@ const Index = () => {
       autoAssignTopicAndNavigate(path);
     }
   }, [autoAssignTopicAndNavigate]);
+
+  // Handle pet page navigation
+  const handlePetNavigation = React.useCallback(() => {
+    playClickSound();
+    
+    // Stop any ongoing TTS before navigation
+    console.log('🔧 Pet navigation cleanup: Stopping TTS');
+    ttsService.stop();
+    
+    setCurrentScreen(4); // Go to pet page
+  }, []);
 
   // Handle chat summary generation (every 2 messages)
   const handleSummaryGeneration = useCallback(async (sessionId: string, currentMessages: ChatMessage[]) => {
@@ -2988,6 +3063,9 @@ const Index = () => {
     playClickSound();
     
     if (isCorrect) {
+      // Award 10 coins for correct spelling answer
+      addCoins(10);
+      
       // Update progress
       setSpellProgress(prev => ({
         ...prev,
@@ -3089,6 +3167,39 @@ const Index = () => {
       return [...prev, nextMessage];
     });
   }, [setChatMessages]);
+
+  // Special handling for pet page - render full screen without header
+  if (currentScreen === 4) {
+    return (
+      <div className="h-screen w-screen overflow-hidden">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        
+        {/* Home Button for Pet Page */}
+        <div className="absolute top-4 left-4 z-50">
+          <Button 
+            variant="default" 
+            onClick={async () => {
+              playClickSound();
+              await handleCloseSession(); // Save current adventure before going home
+              
+              // Trigger a re-render by briefly updating screen state to refresh homepage data
+              setCurrentScreen(0);
+              setTimeout(() => setCurrentScreen(-1), 100);
+            }}
+            className="border-2 bg-primary hover:bg-primary/90 text-white btn-animate px-4 shadow-xl"
+            style={{ borderColor: 'hsl(from hsl(var(--primary)) h s 25%)', boxShadow: '0 4px 0 black' }}
+          >
+            🏠 Home
+          </Button>
+        </div>
+        
+        <PetPage />
+      </div>
+    );
+  }
 
   return (
     <div className="h-full w-full mobile-keyboard-aware bg-pattern flex flex-col overflow-hidden">
@@ -3463,6 +3574,19 @@ const Index = () => {
                 >
                   Adventure
                 </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    playClickSound();
+                    setCurrentScreen(4);
+                  }}
+                  disabled={false}
+                  className="border-2 bg-white btn-animate"
+                  style={{ borderColor: 'hsl(from hsl(var(--primary)) h s 25%)', boxShadow: '0 4px 0 black' }}
+                >
+                  Pets
+                </Button>
               </>
             )}
             
@@ -3471,10 +3595,15 @@ const Index = () => {
                 {devToolsVisible ? `YOUR ADVENTURE - Screen ${currentScreen}` : 
                  userData && currentScreen === -1 ? `Welcome back, ${userData.username}!` :
                  currentScreen === 0 ? 'CHOOSE YOUR ADVENTURE' :
-                 currentScreen === 1 ? 'YOUR ADVENTURE' : 
+                 currentScreen === 1 ? (
+                   <div className="flex items-center justify-center gap-2">
+                     <span className="text-2xl">🪙</span>
+                     <span>{coins}</span>
+                   </div>
+                 ) : 
                  'QUIZ TIME'}
               </h1>
-              {userData && !devToolsVisible && (
+              {userData && !devToolsVisible && currentScreen !== 1 && (
                 <div className="flex items-center justify-center gap-2 mt-1">
                   <span className="text-sm lg:text-base font-semibold text-primary/80">
                     🎓 {selectedGradeFromDropdown || userData.gradeDisplayName}
@@ -3547,21 +3676,19 @@ const Index = () => {
               </PopoverContent>
             </Popover>
             
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="icon" aria-label="Help" className="border-2 bg-white btn-animate" style={{ borderColor: 'hsl(from hsl(var(--primary)) h s 25%)', boxShadow: '0 4px 0 black' }} onClick={() => playClickSound()}>
-                  <HelpCircle className="h-4 w-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>How to use</DialogTitle>
-                  <DialogDescription>
-                    Type what happens next and press Generate to add a new panel. Click thumbnails to navigate. Tap the speaker icon in a bubble to hear the text.
-                  </DialogDescription>
-                </DialogHeader>
-              </DialogContent>
-            </Dialog>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              aria-label="Pet Page" 
+              className="border-2 bg-white btn-animate" 
+              style={{ borderColor: 'hsl(from hsl(var(--primary)) h s 25%)', boxShadow: '0 4px 0 black' }} 
+              onClick={() => {
+                playClickSound();
+                setCurrentScreen(4); // Navigate to pet page
+              }}
+            >
+              <span className="text-lg">🐶</span>
+            </Button>
             
             <Dialog>
               <DialogTrigger asChild>
@@ -3623,6 +3750,7 @@ const Index = () => {
             onStartAdventure={handleStartAdventure} 
             onContinueSpecificAdventure={handleContinueSpecificAdventure}
             selectedTopicFromPreference={selectedTopicFromPreference}
+            onPetNavigation={handlePetNavigation}
           />
         ) : currentScreen === 0 ? (
           <TopicSelection onTopicSelect={handleTopicSelect} />
@@ -3978,11 +4106,20 @@ const Index = () => {
                       
                       {/* Input Bar */}
                       <div className="flex-shrink-0 p-3 border-t border-primary/30 bg-gradient-to-r from-primary/5 to-transparent">
-                        {/* NEW: Unified AI System Status Indicator */}
+                        {/* Ideas Button */}
                         {isUnifiedSystemReady && (
-                          <div className="mb-2 flex items-center gap-2 text-xs text-green-600 bg-green-50 rounded-full px-3 py-1 animate-pulse">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span>🤖 Smart AI with Auto-Images Active</span>
+                          <div className="mb-2 flex justify-center">
+                            <Button
+                              onClick={() => {
+                                playClickSound();
+                                onGenerate('Ideas, please?');
+                              }}
+                              variant="outline"
+                              size="sm"
+                              className="text-xs bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200 hover:from-purple-100 hover:to-pink-100 hover:border-purple-300 text-purple-700 hover:text-purple-800 rounded-full px-4 py-1 transition-all duration-200 shadow-sm hover:shadow-md"
+                            >
+                              💡 Ideas, please?
+                            </Button>
                           </div>
                         )}
                         
@@ -4217,6 +4354,18 @@ const Index = () => {
           isOpen={showFeedbackModal}
           onClose={() => setShowFeedbackModal(false)}
           onSubmit={handleFeedbackSubmit}
+        />
+
+        {/* Spelling Settings Modal */}
+        <SpellingSettings
+          isOpen={showSpellingSettings}
+          onClose={() => setShowSpellingSettings(false)}
+          onConfigChange={(newConfig) => {
+            setSpellingConfig(newConfig);
+            console.log('📝 Spelling config updated:', newConfig);
+          }}
+          currentConfig={spellingConfig}
+          spellingStats={spellingStats}
         />
       </div>
     </div>

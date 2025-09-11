@@ -1,4 +1,11 @@
 import { sampleMCQData } from '@/data/mcq-questions';
+import { 
+  cvcSpellingWords, 
+  getRandomCVCWord, 
+  getRandomCVCWordByDifficulty, 
+  convertCVCToSpellingQuestion,
+  type CVCSpellingWord 
+} from '@/data/cvc-spelling-words';
 
 // Interface for spelling question data
 export interface SpellingQuestion {
@@ -78,4 +85,90 @@ export const getRandomSpellingQuestion = (): SpellingQuestion | null => {
   });
   
   return selectedQuestion;
+};
+
+/**
+ * Get all CVC spelling questions
+ */
+export const getAllCVCSpellingQuestions = (): SpellingQuestion[] => {
+  return cvcSpellingWords.map(convertCVCToSpellingQuestion);
+};
+
+/**
+ * Get a random CVC spelling question
+ */
+export const getRandomCVCSpellingQuestion = (): SpellingQuestion | null => {
+  console.log('🎲 Available CVC spelling words:', cvcSpellingWords.length);
+  
+  if (cvcSpellingWords.length === 0) {
+    return null;
+  }
+  
+  const randomCVCWord = getRandomCVCWord();
+  const spellingQuestion = convertCVCToSpellingQuestion(randomCVCWord);
+  
+  console.log('🎯 Selected CVC spelling question:', {
+    id: spellingQuestion.id,
+    word: spellingQuestion.word,
+    audio: spellingQuestion.audio,
+    questionText: spellingQuestion.questionText,
+    vowel: randomCVCWord.vowel,
+    difficulty: randomCVCWord.difficulty,
+    category: randomCVCWord.category
+  });
+  
+  return spellingQuestion;
+};
+
+/**
+ * Get a random CVC spelling question by difficulty level
+ */
+export const getRandomCVCSpellingQuestionByDifficulty = (difficulty: 'easy' | 'medium' | 'hard'): SpellingQuestion | null => {
+  console.log(`🎲 Getting CVC spelling question with difficulty: ${difficulty}`);
+  
+  const randomCVCWord = getRandomCVCWordByDifficulty(difficulty);
+  if (!randomCVCWord) {
+    console.log(`❌ No CVC words found for difficulty: ${difficulty}`);
+    return null;
+  }
+  
+  const spellingQuestion = convertCVCToSpellingQuestion(randomCVCWord);
+  
+  console.log('🎯 Selected CVC spelling question:', {
+    id: spellingQuestion.id,
+    word: spellingQuestion.word,
+    audio: spellingQuestion.audio,
+    questionText: spellingQuestion.questionText,
+    vowel: randomCVCWord.vowel,
+    difficulty: randomCVCWord.difficulty,
+    category: randomCVCWord.category
+  });
+  
+  return spellingQuestion;
+};
+
+/**
+ * Check if a word follows CVC pattern (Consonant-Vowel-Consonant)
+ */
+export const isCVCWord = (word: string): boolean => {
+  if (word.length !== 3) return false;
+  
+  const consonants = 'bcdfghjklmnpqrstvwxyz';
+  const vowels = 'aeiou';
+  
+  const firstChar = word[0].toLowerCase();
+  const secondChar = word[1].toLowerCase();
+  const thirdChar = word[2].toLowerCase();
+  
+  return consonants.includes(firstChar) && 
+         vowels.includes(secondChar) && 
+         consonants.includes(thirdChar);
+};
+
+/**
+ * Filter existing spelling questions to only include CVC words
+ */
+export const getCVCSpellingQuestionsFromBank = (): SpellingQuestion[] => {
+  const allSpellingQuestions = getAllSpellingQuestions();
+  return allSpellingQuestions.filter(question => isCVCWord(question.audio));
 };
